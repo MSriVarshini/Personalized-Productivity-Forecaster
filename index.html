@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Log — Productivity Forecaster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14161c;
+    --surface: #1b1e27;
+    --surface-2: #21242f;
+    --line: #2f3340;
+    --amber: #e8a33d;
+    --amber-dim: #6b5327;
+    --sage: #7cb894;
+    --sage-dim: #34473c;
+    --text: #ebe7df;
+    --muted: #8b8f9c;
+    --red-dim: #a5605c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(232,163,61,0.05), transparent 45%),
+      radial-gradient(circle at 90% 20%, rgba(124,184,148,0.04), transparent 40%);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  header.page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 34px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .date-tag {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 28px;
+  }
+
+  @media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 24px;
+  }
+
+  .panel h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 18px;
+    color: var(--text);
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .field label span.val {
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--amber);
+  }
+
+  .toggles {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .toggle-btn.active {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: rgba(232,163,61,0.08);
+  }
+
+  button.submit {
+    width: 100%;
+    background: var(--amber);
+    color: #1a1305;
+    border: none;
+    padding: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.15s ease;
+  }
+  button.submit:hover { opacity: 0.88; }
+  button.submit:disabled { opacity: 0.5; cursor: default; }
+
+  
+  .dial-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 6px;
+  }
+
+  .dial-reading {
+    font-family: 'Fraunces', serif;
+    font-size: 48px;
+    font-weight: 700;
+    margin-top: 10px;
+    color: var(--text);
+  }
+  .dial-reading .unit { font-size: 16px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+
+  .dial-status {
+    margin-top: 6px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+  }
+  .status-high { color: var(--sage); border-color: var(--sage-dim); background: rgba(124,184,148,0.08); }
+  .status-low { color: var(--red-dim); border-color: rgba(165,96,92,0.4); background: rgba(165,96,92,0.08); }
+
+  .rec-box {
+    margin-top: 20px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+
+  .rec-headline {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .rec-tip {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .factors {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .factor-chip {
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 4px 9px;
+    border-radius: 999px;
+  }
+
+  .placeholder {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 0;
+  }
+
+  .footer-note {
+    margin-top: 36px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .footer-note a { color: var(--amber); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <div>
+      <div class="eyebrow">Personal Analytics · Digital Twin</div>
+      <h1>Focus Log</h1>
+    </div>
+    <div class="date-tag" id="today-tag"></div>
+  </header>
+
+  <div class="grid">
+
+    <!-- Input panel -->
+    <div class="panel">
+      <h2>Today's entry</h2>
+
+      <div class="toggles">
+        <button class="toggle-btn active" id="btn-weekday" type="button">Weekday</button>
+        <button class="toggle-btn" id="btn-weekend" type="button">Weekend</button>
+      </div>
+      <div class="toggles">
+        <button class="toggle-btn" id="btn-normal" type="button">Normal week</button>
+        <button class="toggle-btn active" id="btn-exam" type="button" style="display:none"></button>
+      </div>
+      <div class="field">
+        <label>Exam week? <span class="val" id="exam-val">No</span></label>
+        <input type="range" id="exam-slider" min="0" max="1" step="1" value="0">
+      </div>
+
+      <div class="field">
+        <label>Sleep last night <span class="val" id="sleep-val">7.0 hrs</span></label>
+        <input type="range" id="sleep" min="3" max="10" step="0.25" value="7">
+      </div>
+
+      <div class="field">
+        <label>Social media / entertainment screen time <span class="val" id="social-val">2.5 hrs</span></label>
+        <input type="range" id="social" min="0" max="7" step="0.25" value="2.5">
+      </div>
+
+      <div class="field">
+        <label>Study-app screen time so far <span class="val" id="studyapp-val">2.0 hrs</span></label>
+        <input type="range" id="studyapp" min="0" max="8" step="0.25" value="2">
+      </div>
+
+      <div class="field">
+        <label>Scheduled class / meeting hours <span class="val" id="class-val">4.5 hrs</span></label>
+        <input type="range" id="classhours" min="0" max="8" step="0.25" value="4.5">
+      </div>
+
+      <div class="field">
+        <label>Self-rated energy right now <span class="val" id="energy-val">3 / 5</span></label>
+        <input type="range" id="energy" min="1" max="5" step="1" value="3">
+      </div>
+
+      <div class="field">
+        <label>Yesterday's focus hours <span class="val" id="prevfocus-val">1.2 hrs</span></label>
+        <input type="range" id="prevfocus" min="0" max="6" step="0.25" value="1.2">
+      </div>
+
+      <button class="submit" id="predict-btn" type="button">Forecast today</button>
+    </div>
+
+    <!-- Output panel -->
+    <div class="panel">
+      <h2>Forecast</h2>
+      <div id="output-area">
+        <div class="placeholder">Fill in today's entry and forecast to see your focus prediction.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">
+    Model: <span id="model-names">—</span> · Trained on synthetic daily-log data (150 days) ·
+    Predictions are directional, not clinical — treat the dial as a nudge, not a verdict.
+  </div>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const todayTag = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+$('today-tag').textContent = todayTag;
+
+
+let isWeekend = 0;
+$('btn-weekday').onclick = () => { isWeekend = 0; $('btn-weekday').classList.add('active'); $('btn-weekend').classList.remove('active'); };
+$('btn-weekend').onclick = () => { isWeekend = 1; $('btn-weekend').classList.add('active'); $('btn-weekday').classList.remove('active'); };
+
+// Exam slider
+$('exam-slider').oninput = (e) => {
+  $('exam-val').textContent = e.target.value === '1' ? 'Yes' : 'No';
+};
+
+
+const bindings = [
+  ['sleep', 'sleep-val', v => v + ' hrs'],
+  ['social', 'social-val', v => v + ' hrs'],
+  ['studyapp', 'studyapp-val', v => v + ' hrs'],
+  ['classhours', 'class-val', v => v + ' hrs'],
+  ['energy', 'energy-val', v => v + ' / 5'],
+  ['prevfocus', 'prevfocus-val', v => v + ' hrs'],
+];
+bindings.forEach(([inputId, labelId, fmt]) => {
+  const el = $(inputId);
+  el.oninput = () => { $(labelId).textContent = fmt(el.value); };
+});
+
+
+fetch('/api/model_info').then(r => r.json()).then(info => {
+  $('model-names').textContent = `${info.regressor} (regression) + ${info.classifier} (classification)`;
+}).catch(() => {});
+
+function renderDial(focusHours, isHigh, prob, rec) {
+  const statusClass = isHigh ? 'status-high' : 'status-low';
+  const statusText = isHigh ? 'High-focus day' : 'Lower-focus day';
+
+  const factorsHtml = rec.contributing_factors.map(f => `<span class="factor-chip">${f}</span>`).join('');
+
+  $('output-area').innerHTML = `
+    <div class="dial-wrap">
+      <svg width="220" height="130" viewBox="0 0 220 130">
+        <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#2f3340" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="${isHigh ? '#7cb894' : '#e8a33d'}"
+          stroke-width="14" stroke-linecap="round"
+          stroke-dasharray="${Math.min(prob,1) * 283} 283"/>
+        <circle cx="110" cy="110" r="4" fill="${isHigh ? '#7cb894' : '#e8a33d'}"/>
+      </svg>
+      <div class="dial-reading">${focusHours.toFixed(1)}<span class="unit">hrs focus predicted</span></div>
+      <div class="dial-status ${statusClass}">${statusText} · ${(prob*100).toFixed(0)}% confidence</div>
+    </div>
+    <div class="rec-box">
+      <div class="rec-headline">${rec.headline}</div>
+      <div class="rec-tip">${rec.tip}</div>
+      <div class="factors">${factorsHtml}</div>
+    </div>
+  `;
+}
+
+$('predict-btn').onclick = async () => {
+  const btn = $('predict-btn');
+  btn.disabled = true;
+  btn.textContent = 'Calculating...';
+
+  const payload = {
+    is_weekend: isWeekend,
+    is_exam_week: parseInt($('exam-slider').value),
+    sleep_hours: parseFloat($('sleep').value),
+    social_media_hours: parseFloat($('social').value),
+    study_app_hours: parseFloat($('studyapp').value),
+    class_hours: parseFloat($('classhours').value),
+    energy_self_log: parseFloat($('energy').value),
+    prev_day_focus_hours: parseFloat($('prevfocus').value),
+    rolling_3day_focus_avg: parseFloat($('prevfocus').value),
+  };
+
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    renderDial(data.predicted_focus_hours, data.high_productivity_day, data.probability_high_productivity, data.recommendation);
+  } catch (err) {
+    $('output-area').innerHTML = `<div class="placeholder">Something went wrong. Is the server running?</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Forecast today';
+  }
+};
+</script>
+</body>
+</html>
